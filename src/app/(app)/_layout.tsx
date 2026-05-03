@@ -1,5 +1,6 @@
 import { CalendarProvider } from "@/src/providers/CalenderProvider";
 import { useTheme } from "@/src/providers/ThemeProvider";
+import { getMonthString } from "@/src/utils/utils";
 import { Stack } from "expo-router";
 import React from "react";
 
@@ -11,10 +12,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="index"
           options={{
-            headerTitle: new Date().toLocaleDateString("default", {
-              month: "long",
-              year: "numeric",
-            }),
+            headerTitle: getMonthString(new Date()),
             headerStyle: { backgroundColor: colors.background },
             headerShadowVisible: false,
           }}

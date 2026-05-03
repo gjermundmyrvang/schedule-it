@@ -12,3 +12,25 @@ export function isToday(d: Date) {
     d.getFullYear() === today.getFullYear()
   );
 }
+
+export function generateMonths(startDate: Date): Date[] {
+  const months: Date[] = [];
+  const start = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date();
+  end.setMonth(end.getMonth() + 24); // 2 years into the future
+
+  let current = start;
+  while (current <= end) {
+    months.push(new Date(current));
+    current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+  }
+
+  return months;
+}
+
+export function getMonthString(d: Date) {
+  return d.toLocaleDateString("default", {
+    month: "long",
+    year: "numeric",
+  });
+}
