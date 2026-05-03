@@ -1,11 +1,10 @@
-import { getMonthString, isToday } from "@/src/utils/utils";
+import { getMonthYearString, isToday } from "@/src/utils/utils";
+import { clsx } from "clsx";
 import { TouchableOpacity, View } from "react-native";
-import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../Text";
 
 interface Props {
   date: Date;
-  focused?: boolean;
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -27,40 +26,36 @@ function getDaysInMonth(year: number, month: number) {
   return days;
 }
 
-export function CalendarMonth({ date, focused = false }: Props) {
-  const { colors } = useTheme();
-
+export function CalendarMonth({ date }: Props) {
   const year = date.getFullYear();
   const month = date.getMonth();
   const days = getDaysInMonth(year, month);
 
+  const isCurrent = month === new Date().getMonth();
+
   return (
     <View className="pb-6">
-      {!focused && <Text variant="title">{getMonthString(date)}</Text>}
+      <Text
+        style={{ color: isCurrent ? "#ff4800" : undefined }}
+        className="font-bold px-4 uppercase tracking-wider"
+      >
+        {getMonthYearString(date)}
+      </Text>
       <View className="flex-1 flex-row flex-wrap justify-between">
         {days.map((day, index) => (
           <View
             key={index}
             style={{ width: `${100 / 7}%` }}
-            className="items-center py-1"
+            className="items-center py-6"
           >
             {day ? (
               <TouchableOpacity
-                style={
-                  isToday(day)
-                    ? { backgroundColor: colors.titleText }
-                    : undefined
-                }
-                className="w-8 h-8 items-center justify-center rounded-full"
+                className={clsx(
+                  "w-12 h-12 items-center justify-center rounded-full",
+                  isToday(day) && "border border-[#ff4800]",
+                )}
               >
-                <Text
-                  style={{
-                    color: isToday(day) ? colors.background : colors.titleText,
-                  }}
-                  className="text-sm"
-                >
-                  {day.getDate()}
-                </Text>
+                <Text className="text-lg">{day.getDate()}</Text>
               </TouchableOpacity>
             ) : null}
           </View>
