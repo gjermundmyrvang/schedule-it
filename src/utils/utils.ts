@@ -31,6 +31,12 @@ export function generateMonths(startDate: Date): Date[] {
 export function getMonthString(d: Date) {
   return d.toLocaleDateString("default", {
     month: "long",
+  });
+}
+
+export function getMonthYearString(d: Date) {
+  return d.toLocaleDateString("default", {
+    month: "long",
     year: "numeric",
   });
 }
