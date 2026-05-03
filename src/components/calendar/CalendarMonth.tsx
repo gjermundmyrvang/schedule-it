@@ -1,10 +1,11 @@
-import { isToday } from "@/src/utils/utils";
+import { getMonthString, isToday } from "@/src/utils/utils";
 import { TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../Text";
 
 interface Props {
   date: Date;
+  focused?: boolean;
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -26,7 +27,7 @@ function getDaysInMonth(year: number, month: number) {
   return days;
 }
 
-export function CalendarMonth({ date }: Props) {
+export function CalendarMonth({ date, focused = false }: Props) {
   const { colors } = useTheme();
 
   const year = date.getFullYear();
@@ -35,6 +36,7 @@ export function CalendarMonth({ date }: Props) {
 
   return (
     <View className="pb-6">
+      {!focused && <Text variant="title">{getMonthString(date)}</Text>}
       <View className="flex-1 flex-row flex-wrap justify-between">
         {days.map((day, index) => (
           <View
