@@ -1,5 +1,6 @@
 import { getMonthYearString, isToday } from "@/src/utils/utils";
 import { clsx } from "clsx";
+import { useRouter } from "expo-router";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "../Text";
 
@@ -27,6 +28,8 @@ function getDaysInMonth(year: number, month: number) {
 }
 
 export function CalendarMonth({ date }: Props) {
+  const router = useRouter();
+
   const year = date.getFullYear();
   const month = date.getMonth();
   const days = getDaysInMonth(year, month);
@@ -34,7 +37,7 @@ export function CalendarMonth({ date }: Props) {
   const isCurrent = month === new Date().getMonth();
 
   return (
-    <View className="pb-6">
+    <View className="pt-6 pb-6">
       <Text
         style={{ color: isCurrent ? "#ff4800" : undefined }}
         className="font-bold px-4 uppercase tracking-wider"
@@ -50,6 +53,7 @@ export function CalendarMonth({ date }: Props) {
           >
             {day ? (
               <TouchableOpacity
+                onPress={() => router.push(`/day/${day.toISOString()}`)}
                 className={clsx(
                   "w-12 h-12 items-center justify-center rounded-full",
                   isToday(day) && "border border-[#ff4800]",
