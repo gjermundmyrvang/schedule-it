@@ -21,3 +21,12 @@ export type Event = {
   created_by: string;
   created_at: string;
 };
+
+export type EventAssignee = {
+  event_id: string;
+  user_id: string;
+};
+
+export type EventWithAssignees = Event & {
+  assignees: EventAssignee[];
+};

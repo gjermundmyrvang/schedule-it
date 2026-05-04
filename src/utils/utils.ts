@@ -49,6 +49,10 @@ export function getMonthYearString(d: Date) {
   return format(d, "MMMM yyyy");
 }
 
+export function getFullDateString(d: Date) {
+  return format(d, "EEEE, d MMMM yyyy");
+}
+
 export function formatDateParam(date: Date): string {
   return format(date, "yyyy-M-d");
 }
