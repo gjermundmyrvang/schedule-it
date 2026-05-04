@@ -1,6 +1,6 @@
 import {
   formatDateParam,
-  getDaysInMonth,
+  getDaysInMonthGrid,
   getMonthYearString,
   isToday,
 } from "@/src/utils/utils";
@@ -18,7 +18,7 @@ export function CalendarMonth({ date }: Props) {
 
   const year = date.getFullYear();
   const month = date.getMonth();
-  const days = getDaysInMonth(year, month);
+  const days = getDaysInMonthGrid(year, month);
 
   const isCurrent = month === new Date().getMonth();
 
