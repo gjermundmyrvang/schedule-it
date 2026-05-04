@@ -1,11 +1,12 @@
 import { Text } from "@/src/components/Text";
+import { parseDateParam } from "@/src/utils/utils";
 import { useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
 
 export default function DaySheet() {
   const { date } = useLocalSearchParams<{ date: string }>();
 
-  const dayDate = new Date(date);
+  const dayDate = parseDateParam(date);
   const label = dayDate.toLocaleDateString("default", {
     weekday: "long",
     day: "numeric",

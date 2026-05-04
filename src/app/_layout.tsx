@@ -3,6 +3,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import "../global.css";
 import { AuthProvider, useAuth } from "../providers/AuthProvider";
 import { ThemeProvider } from "../providers/ThemeProvider";
+import { SplashScreenController } from "../utils/splash";
 
 function RootNavigator() {
   const { session } = useAuth();
@@ -24,6 +25,7 @@ export default function RootLayout() {
     <AuthProvider>
       <ThemeProvider>
         <KeyboardProvider>
+          <SplashScreenController />
           <RootNavigator />
         </KeyboardProvider>
       </ThemeProvider>

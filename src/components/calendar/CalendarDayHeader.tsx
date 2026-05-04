@@ -1,5 +1,5 @@
 import { getMonthString } from "@/src/utils/utils";
-import { View } from "react-native";
+import { Dimensions, View } from "react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Text } from "../Text";
 
@@ -11,6 +11,8 @@ interface Props {
 
 export function CalendarDayHeader({ date }: Props) {
   const { colors } = useTheme();
+
+  const CELL_SIZE = Math.floor(Dimensions.get("window").width / 7);
 
   return (
     <View
@@ -24,7 +26,7 @@ export function CalendarDayHeader({ date }: Props) {
         {DAYS.map((day) => (
           <View
             key={day}
-            style={{ width: `${100 / 7}%` }}
+            style={{ width: CELL_SIZE }}
             className="items-center py-1"
           >
             <Text variant="placeholder" className="text-xs font-medium">
