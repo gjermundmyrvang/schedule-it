@@ -155,7 +155,7 @@ export default function SignIn() {
             {isSubmitting.loading
               ? isSubmitting.label
               : step === "email"
-                ? "Send OTP"
+                ? "Sign in with OTP"
                 : "Verify code"}
           </Text>
         </TouchableOpacity>

@@ -23,9 +23,9 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <SplashScreenController />
       <ThemeProvider>
         <KeyboardProvider>
-          <SplashScreenController />
           <RootNavigator />
         </KeyboardProvider>
       </ThemeProvider>
