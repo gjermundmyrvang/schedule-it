@@ -31,6 +31,7 @@ export default function Homepage() {
         setFocusedMonth(viewableItems[0].item);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
