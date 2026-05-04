@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
-import { Event } from "../types/supabase-types";
+import { EventWithAssignees } from "../types/supabase-types";
 import { supabase } from "../utils/supabase";
 
 export function useEvents(calendarId: string | null, month: Date) {
   const { user } = useAuth();
 
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<EventWithAssignees[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const start = new Date(
@@ -22,6 +22,26 @@ export function useEvents(calendarId: string | null, month: Date) {
     59,
     59,
   ).toISOString();
+
+  const fetchEvents = useCallback(async () => {
+    if (!calendarId) {
+      setEvents([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("events")
+      .select("*, assignees:event_assignees(*)")
+      .eq("calendar_id", calendarId)
+      .gte("starts_at", start)
+      .lte("starts_at", end)
+      .order("starts_at", { ascending: true });
+
+    if (error) console.error(error);
+    else setEvents(data ?? []);
+    setIsLoading(false);
+  }, [calendarId, start, end]);
 
   useEffect(() => {
     if (!calendarId) {
@@ -42,45 +62,57 @@ export function useEvents(calendarId: string | null, month: Date) {
           table: "events",
           filter: `calendar_id=eq.${calendarId}`,
         },
-        fetchEvents,
+        () => fetchEvents(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_assignees" },
+        () => fetchEvents(),
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(subscription);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarId, month.getFullYear(), month.getMonth()]);
+  }, [fetchEvents, calendarId]);
 
-  async function fetchEvents() {
-    if (!calendarId) return;
+  async function createEvent(
+    title: string,
+    starts_at: Date,
+    ends_at: Date,
+    additionalAssignees: string[] = [],
+  ) {
+    if (!calendarId || !user) {
+      console.log("early return - calendarId:", calendarId, "session:", !!user);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("events")
-      .select("*")
-      .eq("calendar_id", calendarId)
-      .gte("starts_at", start)
-      .lte("starts_at", end)
-      .order("starts_at", { ascending: true });
+      .insert({
+        calendar_id: calendarId,
+        title,
+        starts_at: starts_at.toISOString(),
+        ends_at: ends_at.toISOString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
 
     if (error) console.error(error);
-    else setEvents(data ?? []);
 
-    setIsLoading(false);
-  }
+    if (additionalAssignees.length > 0) {
+      const { error: assigneeError } = await supabase
+        .from("event_assignees")
+        .insert(
+          additionalAssignees.map((user_id) => ({
+            event_id: data.id,
+            user_id,
+          })),
+        );
 
-  async function createEvent(title: string, starts_at: Date, ends_at: Date) {
-    if (!calendarId || !user) return;
-
-    const { error } = await supabase.from("events").insert({
-      calendar_id: calendarId,
-      title,
-      starts_at: starts_at.toISOString(),
-      ends_at: ends_at.toISOString(),
-      created_by: user.id,
-    });
-
-    if (error) console.error(error);
+      if (assigneeError) console.error(assigneeError);
+    }
   }
 
   async function deleteEvent(id: string) {
