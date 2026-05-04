@@ -1,23 +1,19 @@
 import { CalendarDayHeader } from "@/src/components/calendar/CalendarDayHeader";
 import { CalendarMonth } from "@/src/components/calendar/CalendarMonth";
-import { useEvents } from "@/src/hooks/useEvents";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { useCalendarContext } from "@/src/providers/CalenderProvider";
 import { useTheme } from "@/src/providers/ThemeProvider";
 import { generateMonths } from "@/src/utils/utils";
 import { FlashList, FlashListRef, ViewToken } from "@shopify/flash-list";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { View } from "react-native";
 
 export default function Homepage() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { activeCalendar } = useCalendarContext();
+  const { events, focusedMonth, setFocusedMonth } = useCalendarContext();
 
   const listRef = useRef<FlashListRef<Date>>(null);
-  const [focusedMonth, setFocusedMonth] = useState(new Date());
-
-  const { events } = useEvents(activeCalendar?.id ?? null, focusedMonth);
 
   const months = useMemo(() => {
     const start = user?.created_at ? new Date(user.created_at) : new Date();

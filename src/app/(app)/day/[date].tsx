@@ -1,24 +1,21 @@
 import { Text } from "@/src/components/Text";
-import { useEvents } from "@/src/hooks/useEvents";
 import { useCalendarContext } from "@/src/providers/CalenderProvider";
+import { getEventsForDay } from "@/src/utils/events";
 import { getFullDateString, parseDateParam } from "@/src/utils/utils";
 import { useLocalSearchParams } from "expo-router";
 import { Button, View } from "react-native";
 
 export default function DaySheet() {
   const { date } = useLocalSearchParams<{ date: string }>();
-  const { activeCalendar } = useCalendarContext();
+  const { events, createEvent } = useCalendarContext();
 
   const dayDate = parseDateParam(date);
+  const dayEvents = getEventsForDay(dayDate, events);
 
-  const { events, createEvent } = useEvents(
-    activeCalendar?.id ?? null,
-    dayDate,
-  );
   return (
     <View className="flex-1 px-4 pt-6 min-h-125">
       <Text variant="title">{getFullDateString(dayDate)}</Text>
-      {events.map((event) => (
+      {dayEvents.map((event) => (
         <Text key={event.id}>{event.title}</Text>
       ))}
       <Button
