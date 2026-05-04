@@ -1,3 +1,6 @@
+import { useAuth } from "@/src/providers/AuthProvider";
+import { EventWithAssignees } from "@/src/types/supabase-types";
+import { getDotColor, getEventsForDay } from "@/src/utils/events";
 import {
   formatDateParam,
   getDaysInMonthGrid,
@@ -11,10 +14,12 @@ import { Text } from "../Text";
 
 interface Props {
   date: Date;
+  events: EventWithAssignees[];
 }
 
-export function CalendarMonth({ date }: Props) {
+export function CalendarMonth({ date, events }: Props) {
   const router = useRouter();
+  const { user } = useAuth();
 
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -33,25 +38,42 @@ export function CalendarMonth({ date }: Props) {
         {getMonthYearString(date)}
       </Text>
       <View className="flex-row flex-wrap">
-        {days.map((day, index) => (
-          <View
-            key={index}
-            style={{ width: CELL_SIZE }}
-            className="items-center py-8"
-          >
-            {day ? (
-              <TouchableOpacity
-                onPress={() => router.push(`/day/${formatDateParam(day)}`)}
-                className={clsx(
-                  "w-10 h-10 items-center justify-center rounded-full",
-                  isToday(day) && "border border-[#ff4800]",
-                )}
-              >
-                <Text className="text-lg">{day.getDate()}</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        ))}
+        {days.map((day, index) => {
+          const dayEvents = day ? getEventsForDay(day, events) : [];
+          return (
+            <View
+              key={index}
+              style={{ width: CELL_SIZE }}
+              className="items-center py-8"
+            >
+              {day ? (
+                <>
+                  <TouchableOpacity
+                    onPress={() => router.push(`/day/${formatDateParam(day)}`)}
+                    className={clsx(
+                      "w-10 h-10 items-center justify-center rounded-full",
+                      isToday(day) && "border border-[#ff4800]",
+                    )}
+                  >
+                    <Text className="text-lg">{day.getDate()}</Text>
+                  </TouchableOpacity>
+                  {/* Event dots */}
+                  <View className="flex-row gap-1 mt-1" style={{ height: 6 }}>
+                    {dayEvents.slice(0, 3).map((event) => (
+                      <View
+                        key={event.id}
+                        style={{
+                          backgroundColor: getDotColor(event, user?.id ?? ""),
+                        }}
+                        className="w-1.5 h-1.5 rounded-full"
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+            </View>
+          );
+        })}
       </View>
     </View>
   );

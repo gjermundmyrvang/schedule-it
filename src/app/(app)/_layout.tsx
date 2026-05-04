@@ -31,6 +31,21 @@ export default function AppLayout() {
             },
           }}
         />
+        <Stack.Screen
+          name="event/[date]"
+          options={{
+            presentation: Platform.OS === "ios" ? "formSheet" : "modal",
+            sheetAllowedDetents: "fitToContents",
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 24,
+            headerShown: false,
+            contentStyle: {
+              backgroundColor: isLiquidGlassAvailable()
+                ? "transparent"
+                : colors.background,
+            },
+          }}
+        />
         <Stack.Screen name="profile" options={{ title: "profile" }} />
       </Stack>
     </CalendarProvider>
