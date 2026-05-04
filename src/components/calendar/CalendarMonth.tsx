@@ -1,3 +1,4 @@
+import { EventWithAssignees } from "@/src/types/supabase-types";
 import {
   formatDateParam,
   getDaysInMonthGrid,
@@ -11,6 +12,7 @@ import { Text } from "../Text";
 
 interface Props {
   date: Date;
+  events: EventWithAssignees[];
 }
 
 export function CalendarMonth({ date }: Props) {

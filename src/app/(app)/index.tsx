@@ -1,6 +1,8 @@
 import { CalendarDayHeader } from "@/src/components/calendar/CalendarDayHeader";
 import { CalendarMonth } from "@/src/components/calendar/CalendarMonth";
+import { useEvents } from "@/src/hooks/useEvents";
 import { useAuth } from "@/src/providers/AuthProvider";
+import { useCalendarContext } from "@/src/providers/CalenderProvider";
 import { useTheme } from "@/src/providers/ThemeProvider";
 import { generateMonths } from "@/src/utils/utils";
 import { FlashList, FlashListRef, ViewToken } from "@shopify/flash-list";
@@ -10,9 +12,12 @@ import { View } from "react-native";
 export default function Homepage() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { activeCalendar } = useCalendarContext();
 
   const listRef = useRef<FlashListRef<Date>>(null);
   const [focusedMonth, setFocusedMonth] = useState(new Date());
+
+  const { events } = useEvents(activeCalendar?.id ?? null, focusedMonth);
 
   const months = useMemo(() => {
     const start = user?.created_at ? new Date(user.created_at) : new Date();
@@ -20,8 +25,8 @@ export default function Homepage() {
   }, [user?.created_at]);
 
   const renderMonth = useCallback(
-    ({ item }: { item: Date }) => <CalendarMonth date={item} />,
-    [],
+    ({ item }: { item: Date }) => <CalendarMonth date={item} events={events} />,
+    [events],
   );
 
   const onViewableItemsChanged = useCallback(
