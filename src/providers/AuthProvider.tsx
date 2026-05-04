@@ -1,5 +1,11 @@
 import { Session, User } from "@supabase/supabase-js";
-import { createContext, use, type PropsWithChildren } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useState,
+  type PropsWithChildren,
+} from "react";
 import { Alert } from "react-native";
 import { supabase } from "../utils/supabase";
 import { useStorageState } from "../utils/useStorageState";
@@ -30,10 +36,28 @@ export function useAuth() {
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [[isLoading, sessionString], setSession] = useStorageState("session");
+  const [session, setFullSession] = useState<Session | null>(null);
 
-  const session: Session | null = sessionString
-    ? JSON.parse(sessionString)
-    : null;
+  useEffect(() => {
+    if (!sessionString) {
+      setFullSession(null);
+      return;
+    }
+
+    const { access_token, refresh_token } = JSON.parse(sessionString);
+
+    supabase.auth
+      .setSession({ access_token, refresh_token })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          setSession(null);
+          return;
+        }
+        setFullSession(data.session);
+      });
+  }, [sessionString, setSession]);
+
   const user: User | null = session?.user ?? null;
 
   async function signIn(email: string): Promise<boolean> {
@@ -60,7 +84,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     if (data.session) {
-      setSession(JSON.stringify(data.session));
+      setSession(
+        JSON.stringify({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }),
+      );
     }
 
     return true;
