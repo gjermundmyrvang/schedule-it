@@ -54,7 +54,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
           setSession(null);
           return;
         }
-        setFullSession(data.session);
+        if (data.session) {
+          setSession(
+            JSON.stringify({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+            }),
+          );
+          setFullSession(data.session);
+        }
       });
   }, [sessionString, setSession]);
 
