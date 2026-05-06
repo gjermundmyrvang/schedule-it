@@ -66,7 +66,11 @@ export default function Homepage() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
       />
-      <FAB icon="calendar" onPress={() => router.push("/calendars")} />
+      <FAB
+        icon="calendar"
+        onPress={() => router.push("/calendars")}
+        color={colors.accent}
+      />
     </View>
   );
 }
