@@ -1,4 +1,5 @@
 import { useAuth } from "@/src/providers/AuthProvider";
+import { useTheme } from "@/src/providers/ThemeProvider";
 import { EventWithAssignees } from "@/src/types/supabase-types";
 import { getDotColor, getEventsForDay } from "@/src/utils/events";
 import {
@@ -20,6 +21,7 @@ interface Props {
 export function CalendarMonth({ date, events }: Props) {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
 
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -32,7 +34,7 @@ export function CalendarMonth({ date, events }: Props) {
   return (
     <View className="pt-6 pb-6">
       <Text
-        style={{ color: isCurrent ? "#ff4800" : undefined }}
+        style={{ color: isCurrent ? colors.accent : undefined }}
         className="font-bold px-4 uppercase tracking-wider"
       >
         {getMonthYearString(date)}
@@ -52,8 +54,9 @@ export function CalendarMonth({ date, events }: Props) {
                     onPress={() => router.push(`/day/${formatDateParam(day)}`)}
                     className={clsx(
                       "w-10 h-10 items-center justify-center rounded-full",
-                      isToday(day) && "border border-[#ff4800]",
+                      isToday(day) && "border",
                     )}
+                    style={{ borderColor: colors.accent }}
                   >
                     <Text className="text-lg">{day.getDate()}</Text>
                   </TouchableOpacity>
