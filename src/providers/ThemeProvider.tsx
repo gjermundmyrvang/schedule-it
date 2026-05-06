@@ -9,6 +9,7 @@ type ThemeColors = {
   labelText: string;
   placeholderText: string;
   border: string;
+  accent: string;
 };
 
 interface ThemeContextType {
@@ -23,6 +24,7 @@ const colorSchemes: Record<Theme, ThemeColors> = {
     labelText: "#6b6b6b",
     placeholderText: "#b0b0b0",
     border: "#d4d4d4",
+    accent: "#ff4800",
   },
   dark: {
     background: "#1a1a1a",
@@ -30,6 +32,7 @@ const colorSchemes: Record<Theme, ThemeColors> = {
     labelText: "#a0a0a0",
     placeholderText: "#666666",
     border: "#3a3a3a",
+    accent: "#ff4800",
   },
 };
 
