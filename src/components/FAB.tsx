@@ -10,6 +10,7 @@ interface Props {
   bottom?: number;
   right?: number;
   size?: number;
+  color?: string;
 }
 
 export function FAB({
@@ -18,11 +19,15 @@ export function FAB({
   bottom = 20,
   right = 20,
   size = 22,
+  color,
 }: Props) {
   const { colors } = useTheme();
 
+  const iconColor = color ?? colors.titleText;
+
   return (
     <GlassView
+      isInteractive
       style={{
         position: "absolute",
         bottom,
@@ -38,7 +43,7 @@ export function FAB({
       }}
     >
       <Pressable onPress={onPress}>
-        <Ionicons name={icon} size={size} color={colors.titleText} />
+        <Ionicons name={icon} size={size} color={iconColor} />
       </Pressable>
     </GlassView>
   );
