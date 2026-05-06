@@ -12,6 +12,7 @@ import { useStorageState } from "../utils/useStorageState";
 import { useAuth } from "./AuthProvider";
 
 interface CalendarContextType {
+  calendars: Calendar[];
   activeCalendar: Calendar | null;
   setActiveCalendar: (calendar: Calendar) => void;
   events: EventWithAssignees[];
@@ -34,10 +35,24 @@ export function CalendarProvider({ children }: PropsWithChildren) {
 
   const [[, activeCalendarId], setActiveCalendarId] =
     useStorageState("activeCalendarId");
+  const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [activeCalendar, setActiveCalendar] = useState<Calendar | null>(null);
   const [events, setEvents] = useState<EventWithAssignees[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [focusedMonth, setFocusedMonth] = useState(new Date());
+
+  useEffect(() => {
+    supabase
+      .from("calendars")
+      .select("*")
+      .then(({ data, error }) => {
+        if (error) {
+          console.log("Error fetching calendars", error.message);
+          return;
+        }
+        setCalendars(data);
+      });
+  }, []);
 
   useEffect(() => {
     if (activeCalendarId) {
@@ -174,6 +189,7 @@ export function CalendarProvider({ children }: PropsWithChildren) {
   return (
     <CalendarContext.Provider
       value={{
+        calendars,
         activeCalendar,
         setActiveCalendar,
         events,
