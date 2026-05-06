@@ -1,10 +1,12 @@
 import { CalendarDayHeader } from "@/src/components/calendar/CalendarDayHeader";
 import { CalendarMonth } from "@/src/components/calendar/CalendarMonth";
+import { FAB } from "@/src/components/FAB";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { useCalendarContext } from "@/src/providers/CalenderProvider";
 import { useTheme } from "@/src/providers/ThemeProvider";
 import { generateMonths } from "@/src/utils/utils";
 import { FlashList, FlashListRef, ViewToken } from "@shopify/flash-list";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { View } from "react-native";
 
@@ -12,6 +14,8 @@ export default function Homepage() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { events, focusedMonth, setFocusedMonth } = useCalendarContext();
+
+  const router = useRouter();
 
   const listRef = useRef<FlashListRef<Date>>(null);
 
@@ -48,7 +52,10 @@ export default function Homepage() {
   }, [months]);
 
   return (
-    <View style={{ backgroundColor: colors.background }} className="flex-1">
+    <View
+      style={{ backgroundColor: colors.background }}
+      className="flex-1 relative"
+    >
       <CalendarDayHeader date={focusedMonth} />
       <FlashList
         ref={listRef}
@@ -59,6 +66,7 @@ export default function Homepage() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
       />
+      <FAB icon="calendar" onPress={() => router.push("/calendars")} />
     </View>
   );
 }
