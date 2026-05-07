@@ -20,6 +20,7 @@ export default function AppLayout() {
         <Stack.Screen name="event/[date]" options={formSheetStyle} />
         <Stack.Screen name="calendars" options={formSheetStyle} />
         <Stack.Screen name="new-calendar" options={formSheetStyle} />
+        <Stack.Screen name="share-calendar/[code]" options={formSheetStyle} />
         <Stack.Screen name="profile" options={{ title: "profile" }} />
       </Stack>
     </CalendarProvider>
