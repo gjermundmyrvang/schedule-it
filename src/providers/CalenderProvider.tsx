@@ -6,6 +6,7 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
+import { Alert } from "react-native";
 import { Calendar, EventWithAssignees } from "../types/supabase-types";
 import { supabase } from "../utils/supabase";
 import { useStorageState } from "../utils/useStorageState";
@@ -18,22 +19,15 @@ interface CalendarContextType {
   setActiveCalendar: (calendar: Calendar) => void;
   events: EventWithAssignees[];
   isLoadingEvents: boolean;
-  createEvent: (
-    title: string,
-    starts_at: Date,
-    ends_at: Date,
-    additionalAssignees?: string[],
-  ) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
   focusedMonth: Date;
   setFocusedMonth: (date: Date) => void;
+  refetchCalendars: () => Promise<void>;
 }
 
 const CalendarContext = createContext<CalendarContextType | null>(null);
 
 export function CalendarProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
-
   const [[, activeCalendarId], setActiveCalendarId] =
     useStorageState("activeCalendarId");
   const [calendars, setCalendars] = useState<Calendar[]>([]);
@@ -42,6 +36,26 @@ export function CalendarProvider({ children }: PropsWithChildren) {
   const [events, setEvents] = useState<EventWithAssignees[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [focusedMonth, setFocusedMonth] = useState(new Date());
+
+  // Fetch all calendars
+  const fetchCalendars = useCallback(async () => {
+    if (!user) {
+      Alert.alert("Cant fetch calendars when no user");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("calendar_members")
+      .select("calendar:calendars(*)")
+      .eq("user_id", user!.id);
+
+    if (error) {
+      Alert.alert("Error fetching calendars", error.message);
+    } else {
+      const calendars = data.map((row) => row.calendar as unknown as Calendar);
+      setCalendars(calendars);
+    }
+    setIsLoadingCalendars(false);
+  }, [user]);
 
   useEffect(() => {
     fetchCalendars();
@@ -53,12 +67,17 @@ export function CalendarProvider({ children }: PropsWithChildren) {
         { event: "*", schema: "public", table: "calendars" },
         fetchCalendars,
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "calendar_members" },
+        fetchCalendars,
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [fetchCalendars]);
 
   useEffect(() => {
     if (activeCalendarId) {
@@ -85,21 +104,6 @@ export function CalendarProvider({ children }: PropsWithChildren) {
         });
     }
   }, [activeCalendarId, setActiveCalendarId]);
-
-  // Fetch all calendars
-  const fetchCalendars = async () => {
-    supabase
-      .from("calendars")
-      .select("*")
-      .then(({ data, error }) => {
-        if (error) {
-          console.log("Error fetching calendars", error.message);
-        } else {
-          setCalendars(data);
-        }
-        setIsLoadingCalendars(false);
-      });
-  };
 
   // Fetch events for focused month
   const fetchEvents = useCallback(async () => {
@@ -165,48 +169,6 @@ export function CalendarProvider({ children }: PropsWithChildren) {
     };
   }, [fetchEvents, activeCalendar]);
 
-  async function createEvent(
-    title: string,
-    starts_at: Date,
-    ends_at: Date,
-    additionalAssignees: string[] = [],
-  ) {
-    if (!activeCalendar || !user) return;
-
-    const { data, error } = await supabase
-      .from("events")
-      .insert({
-        calendar_id: activeCalendar.id,
-        title,
-        starts_at: starts_at.toISOString(),
-        ends_at: ends_at.toISOString(),
-        created_by: user.id,
-      })
-      .select()
-      .single();
-
-    if (error) console.error(error);
-
-    if (additionalAssignees.length > 0) {
-      const { error: assigneeError } = await supabase
-        .from("event_assignees")
-        .insert(
-          additionalAssignees.map((user_id) => ({
-            event_id: data.id,
-            user_id,
-          })),
-        );
-
-      if (assigneeError) console.error(assigneeError);
-    }
-  }
-
-  async function deleteEvent(id: string) {
-    const { error } = await supabase.from("events").delete().eq("id", id);
-
-    if (error) console.error(error);
-  }
-
   return (
     <CalendarContext.Provider
       value={{
@@ -216,10 +178,9 @@ export function CalendarProvider({ children }: PropsWithChildren) {
         setActiveCalendar,
         events,
         isLoadingEvents,
-        createEvent,
-        deleteEvent,
         focusedMonth,
         setFocusedMonth,
+        refetchCalendars: fetchCalendars,
       }}
     >
       {children}
