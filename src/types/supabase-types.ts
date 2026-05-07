@@ -3,6 +3,8 @@ export type Calendar = {
   name: string;
   created_by: string;
   created_at: string;
+  invite_code: string;
+  is_default: boolean;
 };
 
 export type CalendarMember = {
@@ -10,6 +12,10 @@ export type CalendarMember = {
   user_id: string;
   role: "owner" | "member";
   joined_at: string;
+};
+
+export type CalendarMemberRow = {
+  calendar: Calendar;
 };
 
 export type Event = {
