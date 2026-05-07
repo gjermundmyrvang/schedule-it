@@ -1,5 +1,5 @@
 import { Text } from "@/src/components/Text";
-import { useCalendarContext } from "@/src/providers/CalenderProvider";
+import { useEvents } from "@/src/hooks/useEvents";
 import { getFullDateString, parseDateParam } from "@/src/utils/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
@@ -7,7 +7,7 @@ import { Button, View } from "react-native";
 
 export default function NewEvent() {
   const { date } = useLocalSearchParams<{ date: string }>();
-  const { createEvent } = useCalendarContext();
+  const { createEvent } = useEvents();
 
   const router = useRouter();
 

@@ -1,12 +1,12 @@
 import { CalendarProvider } from "@/src/providers/CalenderProvider";
 import { useTheme } from "@/src/providers/ThemeProvider";
-import { isLiquidGlassAvailable } from "expo-glass-effect";
+import { formSheetOptions } from "@/src/utils/navigation";
 import { Stack } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
 
 export default function AppLayout() {
   const { colors } = useTheme();
+  const formSheetStyle = formSheetOptions(colors.background);
   return (
     <CalendarProvider>
       <Stack>
@@ -16,36 +16,11 @@ export default function AppLayout() {
             headerShown: false,
           }}
         />
-        <Stack.Screen
-          name="day/[date]"
-          options={{
-            presentation: Platform.OS === "ios" ? "formSheet" : "modal",
-            sheetAllowedDetents: "fitToContents",
-            sheetGrabberVisible: true,
-            sheetCornerRadius: 24,
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: isLiquidGlassAvailable()
-                ? "transparent"
-                : colors.background,
-            },
-          }}
-        />
-        <Stack.Screen
-          name="event/[date]"
-          options={{
-            presentation: Platform.OS === "ios" ? "formSheet" : "modal",
-            sheetAllowedDetents: "fitToContents",
-            sheetGrabberVisible: true,
-            sheetCornerRadius: 24,
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: isLiquidGlassAvailable()
-                ? "transparent"
-                : colors.background,
-            },
-          }}
-        />
+        <Stack.Screen name="day/[date]" options={formSheetStyle} />
+        <Stack.Screen name="event/[date]" options={formSheetStyle} />
+        <Stack.Screen name="calendars" options={formSheetStyle} />
+        <Stack.Screen name="new-calendar" options={formSheetStyle} />
+        <Stack.Screen name="share-calendar/[code]" options={formSheetStyle} />
         <Stack.Screen name="profile" options={{ title: "profile" }} />
       </Stack>
     </CalendarProvider>

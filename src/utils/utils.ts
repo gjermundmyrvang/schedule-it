@@ -1,5 +1,6 @@
 import {
   addMonths,
+  differenceInMinutes,
   eachMonthOfInterval,
   format,
   getDay,
@@ -59,4 +60,14 @@ export function formatDateParam(date: Date): string {
 
 export function parseDateParam(param: string): Date {
   return parse(param, "yyyy-M-d", new Date());
+}
+
+export const formatTime = (d: Date) => format(d, "HH:mm");
+
+export function formatDuration(start: Date, end: Date): string {
+  const mins = differenceInMinutes(end, start);
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
 }
