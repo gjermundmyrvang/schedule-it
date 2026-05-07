@@ -13,6 +13,7 @@ import { useAuth } from "./AuthProvider";
 
 interface CalendarContextType {
   calendars: Calendar[];
+  isLoadingCalendars: boolean;
   activeCalendar: Calendar | null;
   setActiveCalendar: (calendar: Calendar) => void;
   events: EventWithAssignees[];
@@ -36,22 +37,27 @@ export function CalendarProvider({ children }: PropsWithChildren) {
   const [[, activeCalendarId], setActiveCalendarId] =
     useStorageState("activeCalendarId");
   const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [isLoadingCalendars, setIsLoadingCalendars] = useState(true);
   const [activeCalendar, setActiveCalendar] = useState<Calendar | null>(null);
   const [events, setEvents] = useState<EventWithAssignees[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [focusedMonth, setFocusedMonth] = useState(new Date());
 
   useEffect(() => {
-    supabase
-      .from("calendars")
-      .select("*")
-      .then(({ data, error }) => {
-        if (error) {
-          console.log("Error fetching calendars", error.message);
-          return;
-        }
-        setCalendars(data);
-      });
+    fetchCalendars();
+
+    const subscription = supabase
+      .channel("calendars")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "calendars" },
+        fetchCalendars,
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   useEffect(() => {
@@ -79,6 +85,21 @@ export function CalendarProvider({ children }: PropsWithChildren) {
         });
     }
   }, [activeCalendarId, setActiveCalendarId]);
+
+  // Fetch all calendars
+  const fetchCalendars = async () => {
+    supabase
+      .from("calendars")
+      .select("*")
+      .then(({ data, error }) => {
+        if (error) {
+          console.log("Error fetching calendars", error.message);
+        } else {
+          setCalendars(data);
+        }
+        setIsLoadingCalendars(false);
+      });
+  };
 
   // Fetch events for focused month
   const fetchEvents = useCallback(async () => {
@@ -190,6 +211,7 @@ export function CalendarProvider({ children }: PropsWithChildren) {
     <CalendarContext.Provider
       value={{
         calendars,
+        isLoadingCalendars,
         activeCalendar,
         setActiveCalendar,
         events,
