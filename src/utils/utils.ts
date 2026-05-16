@@ -9,6 +9,7 @@ import {
   parse,
   startOfMonth,
 } from "date-fns";
+import { Alert } from "react-native";
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -70,4 +71,17 @@ export function formatDuration(start: Date, end: Date): string {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+export function confirmDelete(itemName?: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(
+      "Delete " + (itemName ?? "item"),
+      "This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "Delete", style: "destructive", onPress: () => resolve(true) },
+      ],
+    );
+  });
 }
