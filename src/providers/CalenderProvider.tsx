@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
   use,
@@ -9,8 +10,9 @@ import {
 import { Alert } from "react-native";
 import { Calendar, EventWithAssignees } from "../types/supabase-types";
 import { supabase } from "../utils/supabase";
-import { useStorageState } from "../utils/useStorageState";
 import { useAuth } from "./AuthProvider";
+
+const ACTIVE_CALENDAR_KEY = "activeCalendarId";
 
 interface CalendarContextType {
   calendars: Calendar[];
@@ -22,96 +24,67 @@ interface CalendarContextType {
   focusedMonth: Date;
   setFocusedMonth: (date: Date) => void;
   refetchCalendars: () => Promise<void>;
+  refetchEvents: () => Promise<void>;
 }
 
 const CalendarContext = createContext<CalendarContextType | null>(null);
 
 export function CalendarProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
-  const [[, activeCalendarId], setActiveCalendarId] =
-    useStorageState("activeCalendarId");
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [isLoadingCalendars, setIsLoadingCalendars] = useState(true);
-  const [activeCalendar, setActiveCalendar] = useState<Calendar | null>(null);
+  const [activeCalendarId, setActiveCalendarId] = useState<string | null>(null);
   const [events, setEvents] = useState<EventWithAssignees[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [focusedMonth, setFocusedMonth] = useState(new Date());
 
-  // Fetch all calendars
-  const fetchCalendars = useCallback(async () => {
-    if (!user) {
-      Alert.alert("Cant fetch calendars when no user");
-      return;
-    }
+  const activeCalendar =
+    calendars.find((c) => c.id === activeCalendarId) ?? null;
+
+  useEffect(() => {
+    AsyncStorage.getItem(ACTIVE_CALENDAR_KEY)
+      .then((id) => {
+        if (id) setActiveCalendarId(id);
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (activeCalendarId || calendars.length === 0) return;
+    persistActiveCalendar(calendars[0].id);
+  }, [calendars, activeCalendarId]);
+
+  function persistActiveCalendar(id: string) {
+    setActiveCalendarId(id);
+    AsyncStorage.setItem(ACTIVE_CALENDAR_KEY, id).catch(console.error);
+  }
+
+  const setActiveCalendar = useCallback((calendar: Calendar) => {
+    persistActiveCalendar(calendar.id);
+  }, []);
+
+  const refetchCalendars = useCallback(async () => {
+    if (!user) return;
+    setIsLoadingCalendars(true);
+
     const { data, error } = await supabase
       .from("calendar_members")
       .select("calendar:calendars(*)")
-      .eq("user_id", user!.id);
+      .eq("user_id", user.id);
 
-    if (error) {
-      Alert.alert("Error fetching calendars", error.message);
-    } else {
-      const calendars = data.map((row) => row.calendar as unknown as Calendar);
-      setCalendars(calendars);
-    }
+    if (error) Alert.alert("Error fetching calendars", error.message);
+    else setCalendars(data.map((row) => row.calendar as unknown as Calendar));
+
     setIsLoadingCalendars(false);
   }, [user]);
 
-  useEffect(() => {
-    fetchCalendars();
-
-    const subscription = supabase
-      .channel("calendars")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "calendars" },
-        fetchCalendars,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "calendar_members" },
-        fetchCalendars,
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [fetchCalendars]);
-
-  useEffect(() => {
-    if (activeCalendarId) {
-      supabase
-        .from("calendars")
-        .select("*")
-        .eq("id", activeCalendarId)
-        .single()
-        .then(({ data }) => {
-          if (data) setActiveCalendar(data);
-        });
-    } else {
-      supabase
-        .from("calendars")
-        .select("*")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .single()
-        .then(({ data }) => {
-          if (data) {
-            setActiveCalendar(data);
-            setActiveCalendarId(data.id);
-          }
-        });
-    }
-  }, [activeCalendarId, setActiveCalendarId]);
-
-  // Fetch events for focused month
-  const fetchEvents = useCallback(async () => {
+  const refetchEvents = useCallback(async () => {
     if (!activeCalendar) {
       setEvents([]);
       setIsLoadingEvents(false);
       return;
     }
+    setIsLoadingEvents(true);
 
     const start = new Date(
       focusedMonth.getFullYear(),
@@ -137,37 +110,16 @@ export function CalendarProvider({ children }: PropsWithChildren) {
 
     if (error) console.error(error);
     else setEvents(data ?? []);
+
     setIsLoadingEvents(false);
   }, [activeCalendar, focusedMonth]);
 
   useEffect(() => {
-    fetchEvents();
-
-    if (!activeCalendar) return;
-
-    const subscription = supabase
-      .channel(`events:${activeCalendar.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "events",
-          filter: `calendar_id=eq.${activeCalendar.id}`,
-        },
-        () => fetchEvents(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "event_assignees" },
-        () => fetchEvents(),
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [fetchEvents, activeCalendar]);
+    refetchCalendars();
+  }, [refetchCalendars]);
+  useEffect(() => {
+    refetchEvents();
+  }, [refetchEvents]);
 
   return (
     <CalendarContext.Provider
@@ -180,7 +132,8 @@ export function CalendarProvider({ children }: PropsWithChildren) {
         isLoadingEvents,
         focusedMonth,
         setFocusedMonth,
-        refetchCalendars: fetchCalendars,
+        refetchCalendars,
+        refetchEvents,
       }}
     >
       {children}
