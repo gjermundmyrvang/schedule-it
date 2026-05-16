@@ -1,9 +1,11 @@
 import { Alert } from "react-native";
 import { useAuth } from "../providers/AuthProvider";
+import { useCalendarContext } from "../providers/CalenderProvider";
 import { supabase } from "../utils/supabase";
 
 export function useCalendars() {
   const { user } = useAuth();
+  const { refetchCalendars } = useCalendarContext();
 
   async function createCalendar(name: string) {
     if (!user) return;
@@ -13,12 +15,15 @@ export function useCalendars() {
       .insert({ name, created_by: user.id });
 
     if (error) console.error(error);
+
+    await refetchCalendars();
   }
 
   async function deleteCalendar(id: string) {
     const { error } = await supabase.from("calendars").delete().eq("id", id);
 
     if (error) console.error(error);
+    await refetchCalendars();
   }
 
   async function leaveCalendar(id: string) {
@@ -32,6 +37,7 @@ export function useCalendars() {
 
     console.log("deleted rows:", data, "error:", error);
     if (error) console.error(error);
+    await refetchCalendars();
   }
 
   async function joinCalendar(code: string) {
@@ -68,6 +74,8 @@ export function useCalendars() {
       }
       return;
     }
+
+    await refetchCalendars();
 
     return { error: null };
   }
