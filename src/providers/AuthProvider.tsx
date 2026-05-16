@@ -8,7 +8,11 @@ import {
 } from "react";
 import { Alert } from "react-native";
 import { supabase } from "../utils/supabase";
-import { useStorageState } from "../utils/useStorageState";
+import {
+  clearSession,
+  loadSession,
+  saveSession,
+} from "../utils/useStorageState";
 
 const AuthContext = createContext<{
   signIn: (email: string) => Promise<boolean>;
@@ -17,14 +21,7 @@ const AuthContext = createContext<{
   session: Session | null;
   user: User | null;
   isLoading: boolean;
-}>({
-  signIn: async () => false,
-  verifyOtp: async () => false,
-  signOut: () => null,
-  session: null,
-  user: null,
-  isLoading: false,
-});
+} | null>(null);
 
 export function useAuth() {
   const value = use(AuthContext);
@@ -35,38 +32,33 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [[isLoading, sessionString], setSession] = useStorageState("session");
-  const [session, setFullSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!sessionString) {
-      setFullSession(null);
-      return;
-    }
+    loadSession().then((stored) => {
+      if (stored) {
+        supabase.auth.setSession(stored).catch(console.error);
+      }
+      setIsLoading(false);
+    });
 
-    const { access_token, refresh_token } = JSON.parse(sessionString);
+    // Letting Supabase handle auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession) {
+        saveSession(newSession.access_token, newSession.refresh_token).catch(
+          console.error,
+        );
+      } else {
+        clearSession().catch(console.error);
+      }
+    });
 
-    supabase.auth
-      .setSession({ access_token, refresh_token })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(error);
-          setSession(null);
-          return;
-        }
-        if (data.session) {
-          setSession(
-            JSON.stringify({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-            }),
-          );
-          setFullSession(data.session);
-        }
-      });
-  }, [sessionString, setSession]);
-
-  const user: User | null = session?.user ?? null;
+    return () => subscription.unsubscribe();
+  }, []);
 
   async function signIn(email: string): Promise<boolean> {
     const { error } = await supabase.auth.signInWithOtp({ email });
@@ -85,22 +77,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       token,
       type: "email",
     });
-
     if (error) {
       Alert.alert("Invalid code", error.message);
       return false;
     }
+    return !!data.session;
+  }
 
-    if (data.session) {
-      setSession(
-        JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        }),
-      );
-    }
-
-    return true;
+  async function signOut(): Promise<void> {
+    await supabase.auth.signOut();
   }
 
   return (
@@ -108,9 +93,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       value={{
         signIn,
         verifyOtp,
-        signOut: () => setSession(null),
+        signOut,
         session,
-        user,
+        user: session?.user ?? null,
         isLoading,
       }}
     >

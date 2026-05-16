@@ -1,70 +1,23 @@
-import * as SecureStore from "expo-secure-store";
-import { useCallback, useEffect, useReducer } from "react";
-import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type UseStateHook<T> = [[boolean, T | null], (value: T | null) => void];
+const SESSION_KEY = "session";
 
-function useAsyncState<T>(
-  initialValue: [boolean, T | null] = [true, null],
-): UseStateHook<T> {
-  return useReducer(
-    (
-      state: [boolean, T | null],
-      action: T | null = null,
-    ): [boolean, T | null] => [false, action],
-    initialValue,
-  ) as UseStateHook<T>;
-}
-
-export async function setStorageItemAsync(key: string, value: string | null) {
-  if (Platform.OS === "web") {
-    try {
-      if (value === null) {
-        localStorage.removeItem(key);
-      } else {
-        localStorage.setItem(key, value);
-      }
-    } catch (e) {
-      console.error("Local storage is unavailable:", e);
-    }
-  } else {
-    if (value == null) {
-      await SecureStore.deleteItemAsync(key);
-    } else {
-      await SecureStore.setItemAsync(key, value);
-    }
+export async function loadSession() {
+  try {
+    const raw = await AsyncStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
 }
 
-export function useStorageState(key: string): UseStateHook<string> {
-  // Public
-  const [state, setState] = useAsyncState<string>();
-
-  // Get
-  useEffect(() => {
-    if (Platform.OS === "web") {
-      try {
-        if (typeof localStorage !== "undefined") {
-          setState(localStorage.getItem(key));
-        }
-      } catch (e) {
-        console.error("Local storage is unavailable:", e);
-      }
-    } else {
-      SecureStore.getItemAsync(key).then((value: string | null) => {
-        setState(value);
-      });
-    }
-  }, [key, setState]);
-
-  // Set
-  const setValue = useCallback(
-    (value: string | null) => {
-      setState(value);
-      setStorageItemAsync(key, value);
-    },
-    [key, setState],
+export async function saveSession(access_token: string, refresh_token: string) {
+  await AsyncStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({ access_token, refresh_token }),
   );
+}
 
-  return [state, setValue];
+export async function clearSession() {
+  await AsyncStorage.removeItem(SESSION_KEY);
 }

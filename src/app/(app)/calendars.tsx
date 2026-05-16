@@ -5,6 +5,7 @@ import { useAuth } from "@/src/providers/AuthProvider";
 import { useCalendarContext } from "@/src/providers/CalenderProvider";
 import { useTheme } from "@/src/providers/ThemeProvider";
 import { Calendar } from "@/src/types/supabase-types";
+import { confirmDelete } from "@/src/utils";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, TouchableOpacity, View } from "react-native";
@@ -28,8 +29,11 @@ export default function Calendars() {
       Alert.alert("Cannot delete active calendar");
       return;
     }
+    const confirmed = await confirmDelete("Calendar?");
+    if (!confirmed) return;
     setLoading(true);
     await deleteCalendar(id);
+    await refetchCalendars();
     setLoading(false);
   };
 

@@ -6,7 +6,7 @@ import { supabase } from "../utils/supabase";
 
 export function useEvents() {
   const { user } = useAuth();
-  const { activeCalendar } = useCalendarContext();
+  const { activeCalendar, refetchEvents } = useCalendarContext();
 
   async function createEvent(
     title: string,
@@ -33,6 +33,7 @@ export function useEvents() {
     if (additionalAssignees.length > 0) {
       addAdditionalAssignees(additionalAssignees, data);
     }
+    await refetchEvents();
   }
 
   async function addAdditionalAssignees(additional: string[], data: Event) {
@@ -53,6 +54,7 @@ export function useEvents() {
     const { error } = await supabase.from("events").delete().eq("id", id);
 
     if (error) Alert.alert("Error deleting event", error.message);
+    await refetchEvents();
   }
 
   return { createEvent, deleteEvent };
