@@ -7,13 +7,23 @@ import { useTheme } from "@/src/providers/ThemeProvider";
 import { generateMonths } from "@/src/utils/utils";
 import { FlashList, FlashListRef, ViewToken } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RefreshControl, View } from "react-native";
 
 export default function Homepage() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { events, focusedMonth, setFocusedMonth } = useCalendarContext();
+  const { events, focusedMonth, setFocusedMonth, refetchEvents } =
+    useCalendarContext();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+
+    await refetchEvents();
+    setRefreshing(false);
+  }, [refetchEvents]);
 
   const router = useRouter();
 
@@ -65,6 +75,9 @@ export default function Homepage() {
         showsVerticalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
       <FAB
         icon="calendar"
